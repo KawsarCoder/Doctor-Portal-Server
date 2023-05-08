@@ -29,7 +29,8 @@ async function run() {
     const bookingsCollection = client
       .db("doctorsPortal")
       .collection("bookings");
-    // appoinment dynamically update using normal query
+    // V1 = appoinment dynamically update using normal query
+
     // app.get("/appointmentOptions", async (req, res) => {
     //   const date = req.query.date;
     //   const query = {};
@@ -54,7 +55,7 @@ async function run() {
     //   res.send(options);
     // });
 
-    // Appointment dynamically update using pipline
+    // V2 = Appointment dynamically update using pipline
 
     app.get("/v2/appointmentOptions", async (req, res) => {
       const date = req.query.date;
@@ -108,6 +109,19 @@ async function run() {
 
     app.post("/bookings", async (req, res) => {
       const booking = req.body;
+      const query = {
+        appointmentDate: booking.appointmentDate,
+        email: booking.email,
+        treatment: booking.treatment,
+      };
+
+      const countBooked = await bookingsCollection.find(query).toArray();
+
+      if (countBooked.length) {
+        const message = `You already have a booking on ${booking.appointmentDate}`;
+        return res.send({ acknowledged: false, message });
+      }
+
       const result = await bookingsCollection.insertOne(booking);
       res.send(result);
     });
