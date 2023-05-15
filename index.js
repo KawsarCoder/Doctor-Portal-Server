@@ -4,6 +4,8 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
 
 require("dotenv").config();
+const strip = require("strip")(process.env.STRIP_SECRET_KEY);
+
 const port = process.env.PORT || 5000;
 
 const app = express();
@@ -186,6 +188,21 @@ async function run() {
 
       const result = await bookingsCollection.insertOne(booking);
       res.send(result);
+    });
+
+    // strip payment api
+
+    app.post("/create-payment-intent", async (req, res) => {
+      const booking = req.body;
+      const price = booking.price;
+      const amount = price * 100;
+
+      const paymentIntent = await strip.paymentIntents.create({
+        currency: "usd",
+        amount: amount,
+        payment_method_types: ["card"],
+      });
+      req.send({ clientSecret: paymentIntent.client_secret });
     });
 
     app.get("/jwt", async (req, res) => {
